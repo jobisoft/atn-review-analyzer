@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Log Analysis</title>
+  <link rel="stylesheet" href="../assets/common.css">
+  <link rel="stylesheet" href="analysis.css">
+</head>
+<body>
+  <header class="page-head">
+    <div>
+      <h1>Review Log Analysis</h1>
+      <p class="muted" id="span"></p>
+      <p class="muted anon-only" id="anon-note">Anonymous data: everything on this page is made from the anonymous file only (the file of Export anonymous data, read as another profile would import it). Reviewers are fake UUIDs, the first 8 characters are shown. There are no comments or review entries.</p>
+    </div>
+  </header>
+
+  <form id="filters" class="filters" autocomplete="off" aria-label="Filter for everything: range">
+    <label>From <input type="date" id="f-start"></label>
+    <label>To <input type="date" id="f-end"></label>
+    <button type="reset" id="f-reset">Reset</button>
+  </form>
+
+  <section class="block" aria-labelledby="h-submission">
+    <h2 id="h-submission">Submission Activity</h2>
+    <form id="f-submission" class="filters section-filter" autocomplete="off" aria-label="Filter of this section">
+      <label>Reviewer <select id="s-reviewer"><option value="">All</option></select></label>
+      <label>Event <select id="s-event"><option value="">All</option></select></label>
+      <label>Queue <select id="s-queue">
+        <option value="">All</option><option value="new">new</option><option value="update">update</option><option value="unknown">unknown</option>
+      </select></label>
+      <label>Type <select id="s-type">
+        <option value="">All</option><option value="webextension">WebExtension</option><option value="experiment">Experiment</option><option value="theme">Theme</option><option value="legacy">Legacy</option><option value="unknown">unknown</option>
+      </select></label>
+      <button type="reset" id="s-reset">Reset</button>
+    </form>
+    <figure class="graph">
+      <p class="muted note">Per week of the submission (weeks start on Monday), for the events that match the filters. It plots when a new version was submitted for review and, if it was handled already, how. Pending means it has not been handled yet. The From and To dates count on the day of the submission.</p>
+      <div class="legend"><span class="rejected">Rejected</span><span>Other</span><span class="approved">Approved</span><span class="waiting">Pending</span></div>
+      <div id="submissions" class="chart timeline"></div>
+    </figure>
+  </section>
+
+  <section class="block" aria-labelledby="h-activity">
+    <h2 id="h-activity">Review Activity</h2>
+    <form id="f-review" class="filters section-filter" autocomplete="off" aria-label="Filter of this section">
+      <label>Reviewer <select id="f-reviewer"><option value="">All</option></select></label>
+      <label>Event <select id="f-event"><option value="">All</option></select></label>
+      <label>Queue <select id="f-queue">
+        <option value="">All</option><option value="new">new</option><option value="update">update</option><option value="unknown">unknown</option>
+      </select></label>
+      <label>Type <select id="f-type">
+        <option value="">All</option><option value="webextension">WebExtension</option><option value="experiment">Experiment</option><option value="theme">Theme</option><option value="legacy">Legacy</option><option value="unknown">unknown</option>
+      </select></label>
+      <button type="reset" id="r-reset">Reset</button>
+    </form>
+    <figure class="graph">
+      <p class="muted note">Per week of the review (weeks start on Monday), for the events that match the filters. It plots when and how a submission was handled, not when it was submitted. Submissions that have not been handled yet are not in this graph.</p>
+      <div class="legend"><span class="rejected">Rejected</span><span>Other</span><span class="approved">Approved</span></div>
+      <div id="timeline" class="chart timeline"></div>
+    </figure>
+  </section>
+
+  <section class="block" aria-labelledby="h-activity-queue">
+    <h2 id="h-activity-queue">Review Queue Activity</h2>
+    <form id="f-activity" class="filters section-filter" autocomplete="off" aria-label="Filter of this section">
+      <label>Type <select id="a-type">
+        <option value="">All</option><option value="webextension">WebExtension</option><option value="experiment">Experiment</option><option value="theme">Theme</option><option value="legacy">Legacy</option><option value="unknown">unknown</option>
+      </select></label>
+      <button type="reset" id="a-reset">Reset</button>
+    </form>
+    <h3 id="h-size">Review Queue Size</h3>
+    <p class="muted note">The number of add-ons in each queue at the end of every week.</p>
+    <div class="legend"><span class="size">Size of the queue</span></div>
+    <div class="grid">
+      <figure class="graph">
+        <div class="graph-title">New queue</div>
+        <div id="size-new" class="chart"></div>
+      </figure>
+      <figure class="graph">
+        <div class="graph-title">Update queue</div>
+        <div id="size-update" class="chart"></div>
+      </figure>
+    </div>
+
+    <h3 id="h-bars">Review Queue In/Out</h3>
+    <p class="muted note">What came into each queue and what left it, per week: bars up for the submissions, bars down for the first decisions. It has the same scale as the size above, so a bar and the line can be compared by their height.</p>
+    <div class="legend"><span class="arrived">Submitted</span><span class="rejected">Rejected</span><span class="approved">Approved</span></div>
+    <div class="grid">
+      <figure class="graph">
+        <div class="graph-title">New queue</div>
+        <div id="bars-new" class="chart"></div>
+      </figure>
+      <figure class="graph">
+        <div class="graph-title">Update queue</div>
+        <div id="bars-update" class="chart"></div>
+      </figure>
+    </div>
+
+    <h3 id="h-time">Review Time</h3>
+    <p class="muted note">How long the add-ons of each week have waited, in days: the median (solid) and the mean (dashed). Every add-on that was in the queue at any time of the week counts, with its age when it was reviewed, or at the end of Sunday if it is still waiting (so those are at least this old). A week in which nothing is reviewed is not empty: it shows how old the waiting add-ons are, and the line rises. Same rule as Review Queue Age.</p>
+    <p class="muted note">Median and mean: the median is the middle value, half of the add-ons waited less and half longer, so it is the typical wait and a few extreme ones do not move it. The mean is all the waits added up and divided by their number, so every long wait pulls it up. When the mean is far above the median, a few add-ons waited much longer than the rest.</p>
+    <div class="legend"><span class="median">Median review time</span><span class="mean">Mean review time</span></div>
+    <div class="grid">
+      <figure class="graph">
+        <div class="graph-title">New queue</div>
+        <div id="time-new" class="chart"></div>
+      </figure>
+      <figure class="graph">
+        <div class="graph-title">Update queue</div>
+        <div id="time-update" class="chart"></div>
+      </figure>
+    </div>
+
+    <h3 id="h-state">Review Queue Age</h3>
+    <p class="muted note">How long submissions have waited. A column is a week, a row a week of age (36 rows, the last one is older), and the labels sit on the edges between the rows. Every submission that was in the queue at any time of a week counts once for it, with its age when it was reviewed, or at the end of Sunday if it was still waiting. So a tower is a stack of blocks and one block is one submission. The colour is the age, see the legend. Drag to turn, hold Ctrl (Cmd on a Mac) to move by dragging and to zoom with the wheel, or use the buttons. Double click resets.</p>
+    <div id="ageweeks-legend" class="heat-legend" aria-hidden="true"></div>
+    <div class="grid stacked">
+      <figure class="graph">
+        <div class="graph-title">New queue</div>
+        <div id="ageweeks-new" class="chart"></div>
+      </figure>
+      <figure class="graph">
+        <div class="graph-title">Update queue</div>
+        <div id="ageweeks-update" class="chart"></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-groups">
+    <h2 id="h-groups">Reviewers and Event Types</h2>
+    <form id="f-groups" class="filters section-filter" autocomplete="off" aria-label="Filter of the tables">
+      <label>Reviewer <select id="g-reviewer"><option value="">All</option></select></label>
+      <label>Event <select id="g-event"><option value="">All</option></select></label>
+      <label>Queue <select id="g-queue">
+        <option value="">All</option><option value="new">new</option><option value="update">update</option><option value="unknown">unknown</option>
+      </select></label>
+      <label>Type <select id="g-type">
+        <option value="">All</option><option value="webextension">WebExtension</option><option value="experiment">Experiment</option><option value="theme">Theme</option><option value="legacy">Legacy</option><option value="unknown">unknown</option>
+      </select></label>
+      <button type="reset" id="g-reset">Reset</button>
+    </form>
+    <div class="grid">
+      <div>
+        <h3>Reviewers</h3>
+        <table id="reviewers" class="data"></table>
+      </div>
+      <div>
+        <h3>Event types</h3>
+        <table id="eventtypes" class="data"></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-records">
+    <div class="table-head">
+      <h2 id="h-records">Records <span id="shown" class="muted"></span></h2>
+      <span class="not-anon">
+        <button type="button" id="export-json">Export JSON</button>
+        <button type="button" id="export-csv">Export CSV</button>
+      </span>
+    </div>
+    <form id="f-records" class="filters section-filter" autocomplete="off" aria-label="Filter of the records">
+      <label>Reviewer <select id="c-reviewer"><option value="">All</option></select></label>
+      <label>Event <select id="c-event"><option value="">All</option></select></label>
+      <label>Queue <select id="c-queue">
+        <option value="">All</option><option value="new">new</option><option value="update">update</option><option value="unknown">unknown</option>
+      </select></label>
+      <label>Type <select id="c-type">
+        <option value="">All</option><option value="webextension">WebExtension</option><option value="experiment">Experiment</option><option value="theme">Theme</option><option value="legacy">Legacy</option><option value="unknown">unknown</option>
+      </select></label>
+      <label class="grow">Text <input type="search" id="c-text" placeholder="words to find"></label>
+      <button type="reset" id="c-reset">Reset</button>
+    </form>
+    <p class="muted note">Text: all words must be found in the add-on name or in the comment. Start with <code>n:</code> to search the add-on name only, or with <code>c:</code> to search the comment only (the prefix only counts as the first characters).</p>
+    <div class="rec-controls">
+      <label>Show
+        <select id="rec-max">
+          <option value="50" selected>50</option>
+          <option value="200">200</option>
+          <option value="500">500</option>
+          <option value="all">all</option>
+        </select>
+        entries
+      </label>
+    </div>
+    <table id="records" class="data records">
+      <thead>
+        <tr>
+          <th class="nowrap"><button type="button" data-sort="date">Date</button></th>
+          <th><button type="button" data-sort="event">Event</button></th>
+          <th><button type="button" data-sort="reviewer">Reviewer</button></th>
+          <th><button type="button" data-sort="addonName">Add-on</button></th>
+          <th class="nowrap"><button type="button" data-sort="tSubmission">Submitted</button></th>
+          <th><button type="button" data-sort="tWait">Wait in days</button></th>
+          <th><button type="button" data-sort="queue">Queue</button></th>
+          <th><button type="button" data-sort="type">Type</button></th>
+          <th class="not-anon">Comment</th>
+          <th class="not-anon">Review entry</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <script type="module" src="analysis.js"></script>
+</body>
+</html>

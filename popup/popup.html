@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATN Review Analyzer</title>
+  <link rel="stylesheet" href="../assets/common.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <h1>ATN Review Analyzer</h1>
+    <p class="count"><strong id="count">0</strong> events<span id="entries"></span> <span id="last" class="muted scan-only"></span></p>
+
+    <div class="mode scan-only" role="radiogroup" aria-label="What to scan">
+      <label><input type="radio" name="mode" value="new" checked> New entries only <span id="since" class="muted"></span></label>
+      <label><input type="radio" name="mode" value="range"> Scan a range</label>
+    </div>
+    <div class="range scan-only">
+      <label>From <input type="date" id="start"></label>
+      <label>To (empty: today) <input type="date" id="end"></label>
+      <span class="buttons" id="scan-buttons">
+        <button id="scan" class="primary" type="button">Scan</button>
+        <button id="cancel" type="button">Stop</button>
+      </span>
+    </div>
+
+    <progress id="bar" class="scan-only" max="1" value="0" hidden></progress>
+    <p id="status" class="status muted" aria-live="polite"></p>
+    <div class="actions scan-only">
+      <button id="wipe" class="danger" type="button">Wipe all data</button>
+      <button id="requests" type="button" title="The addresses that the scans requested and the HTTP status of the answer (time, status, address), the newest 5000.">Download request log</button>
+    </div>
+
+    <h2 class="preview-title" id="preview-title">Review Activity</h2>
+    <div id="preview" class="preview" role="group" aria-labelledby="preview-title"></div>
+    <div class="legend"><span class="rejected">Rejected</span><span>Other</span><span class="approved">Approved</span></div>
+
+    <div class="actions">
+      <button id="export" type="button">Export JSON</button>
+      <button id="import" type="button">Import JSON...</button>
+    </div>
+    <button id="analyze" class="wide" type="button">Analyze</button>
+    <label class="anonymize"><input type="checkbox" id="anonymize"> Anonymize <span class="muted">(for Export JSON and Analyze: fake reviewers, no comments)</span></label>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

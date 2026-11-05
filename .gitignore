@@ -1,0 +1,9 @@
+dist/
+test/work-*/
+test/last-screenshot.png
+node_modules/
+__pycache__/
+*.pyc
+test/samples/
+reviewlog-export-*.json
+reviewlog-anon-*.json

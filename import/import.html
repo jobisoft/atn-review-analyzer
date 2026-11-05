@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Import Review Log Data</title>
+  <link rel="stylesheet" href="../assets/common.css">
+  <link rel="stylesheet" href="import.css">
+</head>
+<body>
+  <main>
+    <h1>Import review log data</h1>
+    <p>Choose a JSON file that was exported by this add-on. Events that are stored already are skipped. A review entry
+       replaces the stored one only if it was fetched later. Nothing is removed.</p>
+    <p class="muted">This page is a tab because Firefox closes the toolbar popup when a file dialog opens.</p>
+    <p class="row">
+      <input type="file" id="file" accept=".json,application/json">
+      <button type="button" id="import" class="primary" disabled>Import</button>
+    </p>
+    <progress id="bar" max="1" value="0" hidden></progress>
+    <p id="status" aria-live="polite"></p>
+    <p><button type="button" id="analyze" hidden>Open analysis</button></p>
+  </main>
+  <script type="module" src="import.js"></script>
+</body>
+</html>
